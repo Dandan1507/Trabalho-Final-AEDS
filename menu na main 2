@@ -1,0 +1,91 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+
+// Definindo o código que já foi fornecido anteriormente
+
+int main() {
+    srand(time(NULL)); // Inicializa o gerador de números aleatórios
+    TArvore arvore;
+    arvore.raiz = NULL;
+    
+    // Preenche a árvore com cidades e eventos aleatórios
+    preencherArvore(&arvore);
+
+    int opcao;
+    char eventosEscolhidos[MAX_EVENTOS][MAX_NOME];
+    int totalEventos;
+    
+    do {
+        printf("\n*** MENU ***\n");
+        printf("1. Exibir cidades em ordem (Caminhamento Central)\n");
+        printf("2. Buscar cidade com evento\n");
+        printf("3. Encontrar melhor rota para visitar eventos\n");
+        printf("4. Sair\n");
+        printf("Escolha uma opcao: ");
+        scanf("%d", &opcao);
+        
+        switch(opcao) {
+            case 1: {
+                // Exibe as cidades em ordem
+                printf("\nCidades em Ordem (Caminhamento Central):\n");
+                Central(arvore.raiz);
+                printf("\n");
+                break;
+            }
+            case 2: {
+                // Buscar uma cidade com um evento específico
+                char nomeEvento[MAX_NOME];
+                printf("\nDigite o nome do evento: ");
+                scanf(" %[^\n]%*c", nomeEvento);
+                
+                TCelula *resultados[MAX_EVENTOS];
+                int indices[MAX_EVENTOS];
+                int contador = 0;
+                
+                buscarCidadesComEvento(arvore.raiz, nomeEvento, resultados, indices, &contador);
+                
+                if (contador > 0) {
+                    printf("\nCidades com o evento '%s':\n", nomeEvento);
+                    for (int i = 0; i < contador; i++) {
+                        printf("Cidade: %s, Evento: %s, Horario: %s, Nota: %d\n", 
+                               resultados[i]->cidade.nome,
+                               resultados[i]->cidade.eventos[indices[i]].nome,
+                               resultados[i]->cidade.eventos[indices[i]].horario,
+                               resultados[i]->cidade.eventos[indices[i]].nota);
+                    }
+                } else {
+                    printf("Nenhuma cidade encontrada com o evento '%s'.\n", nomeEvento);
+                }
+                break;
+            }
+            case 3: {
+                // Encontrar melhor rota para visitar eventos
+                printf("\nQuantos eventos você deseja visitar? (Max %d): ", MAX_EVENTOS);
+                scanf("%d", &totalEventos);
+
+                if (totalEventos > MAX_EVENTOS) {
+                    printf("Número de eventos excede o limite.\n");
+                    break;
+                }
+
+                for (int i = 0; i < totalEventos; i++) {
+                    printf("Digite o nome do evento %d: ", i + 1);
+                    scanf(" %[^\n]%*c", eventosEscolhidos[i]);
+                }
+
+                encontrarMelhorRota(&arvore, eventosEscolhidos, totalEventos);
+                break;
+            }
+            case 4:
+                printf("Saindo do programa...\n");
+                break;
+            default:
+                printf("Opção inválida, tente novamente.\n");
+                break;
+        }
+    } while(opcao != 4);
+
+    return 0;
+}
