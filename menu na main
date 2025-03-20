@@ -1,0 +1,176 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+
+#define MAX_CIDADES 50
+#define MAX_EVENTOS 5
+#define MAX_NOME 50
+
+// Definindo as estruturas de dados
+typedef struct {
+    char nome[MAX_NOME];
+    char horario[MAX_NOME];
+    int nota;
+} Evento;
+
+typedef struct Celula {
+    struct Cidade cidade;
+    struct Celula *esq, *dir;
+} TCelula;
+
+typedef struct Cidade {
+    char nome[MAX_NOME];
+    Evento eventos[MAX_EVENTOS];
+    int numEventos;
+} Cidade;
+
+typedef struct {
+    TCelula *raiz;
+} TArvore;
+
+// Funções auxiliares
+void Central(TCelula* raiz);
+void preencherArvore(TArvore *arvore);
+void buscarCidadesComEvento(TCelula* raiz, char* evento, TCelula* resultados[], int indices[], int* contador);
+void encontrarMelhorRota(TArvore* arvore, char eventosEscolhidos[][MAX_NOME], int totalEventos);
+
+// Função para exibir as cidades em ordem crescente ou decrescente
+void exibirCidades(TArvore* arvore, int ordemCrescente) {
+    // Exibe a lista de cidades com base na ordem
+    if (ordemCrescente) {
+        printf("Acessando GPS... \n");
+        printf("Você está em '%s'\n", arvore->raiz->cidade.nome);
+        Central(arvore->raiz); // Caminhamento central
+    } else {
+        // Aqui pode ser implementado um caminhamento para ordem decrescente
+        printf("Ordem decrescente não implementada ainda.\n");
+    }
+}
+
+int main() {
+    srand(time(NULL)); // Inicializa o gerador de números aleatórios
+    TArvore arvore;
+    arvore.raiz = NULL;
+
+    // Preenche a árvore com cidades e eventos aleatórios
+    preencherArvore(&arvore);
+
+    int opcao, ordemCrescente;
+    char eventosEscolhidos[MAX_EVENTOS][MAX_NOME];
+    int totalEventos;
+
+    do {
+        printf("\n*** BEM VINDO ***\n");
+        printf("Deseja ver a lista das cidades com base em:\n");
+        printf("1. Ordem Crescente (por nome)\n");
+        printf("2. Ordem Decrescente (por nome)\n");
+        printf("Escolha uma opção: ");
+        scanf("%d", &ordemCrescente);
+
+        if (ordemCrescente == 1 || ordemCrescente == 2) {
+            exibirCidades(&arvore, ordemCrescente);
+        } else {
+            printf("Opção inválida. Por favor, escolha novamente.\n");
+            continue;
+        }
+
+        printf("-----------------\n");
+        printf("Cidade (Próxima a cidade esquerda e cidade direita):\n");
+        printf("Cidade: %s\n", arvore.raiz->cidade.nome);
+        printf("Eventos:\n");
+
+        // Exibir eventos da cidade atual
+        for (int i = 0; i < arvore.raiz->cidade.numEventos; i++) {
+            printf("Evento %d: %s - Nota: %d\n", i + 1, arvore.raiz->cidade.eventos[i].nome, arvore.raiz->cidade.eventos[i].nota);
+        }
+        
+        printf("-----------------\n");
+        printf("Escolha uma das opções:\n");
+        printf("1. Gerar um roteiro de viagem sugerido\n");
+        printf("2. Buscar cidade\n");
+        printf("3. Buscar evento\n");
+        printf("Escolha uma opção: ");
+        scanf("%d", &opcao);
+
+        switch(opcao) {
+            case 1: {
+                printf("Gerando roteiro de viagem...\n");
+                // Aqui é onde você geraria o roteiro sugerido (já implementado na main)
+                encontrarMelhorRota(&arvore, eventosEscolhidos, totalEventos);
+                break;
+            }
+            case 2: {
+                printf("Digite o nome da cidade para buscar: ");
+                char nomeCidade[MAX_NOME];
+                scanf(" %[^\n]%*c", nomeCidade);
+
+                // Buscar cidade
+                TCelula* cidadeBuscada = NULL; // Função para buscar a cidade
+                printf("Cidade encontrada: %s\n", cidadeBuscada->cidade.nome);
+                printf("Eventos:\n");
+                for (int i = 0; i < cidadeBuscada->cidade.numEventos; i++) {
+                    printf("Evento %d: %s - Nota: %d\n", i + 1, cidadeBuscada->cidade.eventos[i].nome, cidadeBuscada->cidade.eventos[i].nota);
+                }
+                printf("-----------------\n");
+                
+                // Verificar se deve recomendar a cidade ou não com base na nota dos eventos
+                int somaNotas = 0;
+                for (int i = 0; i < cidadeBuscada->cidade.numEventos; i++) {
+                    somaNotas += cidadeBuscada->cidade.eventos[i].nota;
+                }
+                float mediaNotas = somaNotas / cidadeBuscada->cidade.numEventos;
+                if (mediaNotas > 7) {
+                    printf("Recomendamos visitar os eventos dessa cidade!\n");
+                } else {
+                    printf("Não recomendamos essa cidade no momento.\n");
+                }
+                break;
+            }
+            case 3: {
+                printf("Digite o nome do evento para buscar: ");
+                char nomeEvento[MAX_NOME];
+                scanf(" %[^\n]%*c", nomeEvento);
+
+                // Buscar evento
+                TCelula *resultados[MAX_EVENTOS];
+                int indices[MAX_EVENTOS];
+                int contador = 0;
+                buscarCidadesComEvento(arvore.raiz, nomeEvento, resultados, indices, &contador);
+                
+                printf("Eventos encontrados:\n");
+                for (int i = 0; i < contador; i++) {
+                    printf("Evento: %s - Nota: %d - Cidade: %s\n", 
+                            resultados[i]->cidade.eventos[indices[i]].nome,
+                            resultados[i]->cidade.eventos[indices[i]].nota,
+                            resultados[i]->cidade.nome);
+                }
+
+                // Mostrar os melhores eventos
+                printf("\nMelhores eventos (Top 4):\n");
+                for (int i = 0; i < 4 && i < contador; i++) {
+                    printf("%s (%d) - Cidade: %s\n", resultados[i]->cidade.eventos[indices[i]].nome,
+                                                   resultados[i]->cidade.eventos[indices[i]].nota,
+                                                   resultados[i]->cidade.nome);
+                }
+                break;
+            }
+            default:
+                printf("Opção inválida. Por favor, escolha novamente.\n");
+                continue;
+        }
+
+        printf("-----------------\n");
+        char continuar;
+        printf("Deseja continuar utilizando? (s/n): ");
+        scanf(" %c", &continuar);
+        
+        if (continuar == 'n' || continuar == 'N') {
+            printf("Saindo do programa...\n");
+            break;
+        }
+
+    } while(1);
+
+    return 0;
+}
